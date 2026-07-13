@@ -52,14 +52,17 @@ test("normalizeConfig rejects unsafe CSS color values", () => {
 });
 
 test("resolveVisualState distinguishes rain, dry, unavailable, and unexpected states", () => {
-  const config = normalizeConfig({ entity: "sensor.rain" });
+  const config = normalizeConfig({
+    entity: "sensor.rain",
+    unknown_text: "感測器狀態異常",
+  });
 
   assert.equal(resolveVisualState("下雨中", config).kind, "rain");
   assert.equal(resolveVisualState("沒下雨", config).kind, "dry");
   assert.equal(resolveVisualState("unavailable", config).kind, "unavailable");
   assert.equal(resolveVisualState("unknown", config).kind, "unavailable");
   assert.equal(resolveVisualState("校正中", config).kind, "unknown");
-  assert.equal(resolveVisualState("校正中", config).stateText, "校正中");
+  assert.equal(resolveVisualState("校正中", config).stateText, "感測器狀態異常");
 });
 
 test("resolveSecondaryText prefers a configured entity attribute and preserves zero", () => {

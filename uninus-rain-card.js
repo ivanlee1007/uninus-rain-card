@@ -173,7 +173,7 @@ function resolveVisualState(state, config) {
   return {
     kind: "unknown",
     icon: config.unavailable_icon,
-    stateText: String(state),
+    stateText: config.unknown_text,
     statusText: config.unknown_status_text,
     color: config.unknown_color,
     colorEnd: config.unknown_color_end,
@@ -208,7 +208,7 @@ function getLayoutMode(width, height) {
   return "regular";
 }
 
-const VERSION = "1.0.0";
+const VERSION = "1.0.1";
 
 class UninusRainCard extends i$2 {
   static properties = {

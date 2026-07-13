@@ -10,7 +10,7 @@ import {
   resolveVisualState,
 } from "./core.js";
 
-const VERSION = "1.0.1";
+const VERSION = "1.0.2";
 
 class UninusRainCard extends LitElement {
   static properties = {
@@ -482,12 +482,15 @@ class UninusRainCardEditor extends LitElement {
 
   _textField(key, label) {
     return html`
-      <ha-textfield
-        .label=${label}
-        .value=${this._config?.[key] ?? ""}
-        data-key=${key}
-        @change=${this._changed}
-      ></ha-textfield>
+      <label class="text-field">
+        <span>${label}</span>
+        <input
+          type="text"
+          .value=${this._config?.[key] ?? DEFAULT_CONFIG[key] ?? ""}
+          data-key=${key}
+          @change=${this._changed}
+        >
+      </label>
     `;
   }
 
@@ -546,10 +549,15 @@ class UninusRainCardEditor extends LitElement {
             ${this._textField("dry_state", "沒下雨狀態值")}
             ${this._textField("rain_text", "下雨主要文字")}
             ${this._textField("dry_text", "沒下雨主要文字")}
+            ${this._textField("unavailable_text", "無法使用主要文字")}
+            ${this._textField("unknown_text", "異常主要文字")}
             ${this._textField("rain_status_text", "下雨徽章文字")}
             ${this._textField("dry_status_text", "沒下雨徽章文字")}
+            ${this._textField("unavailable_status_text", "無資料徽章文字")}
+            ${this._textField("unknown_status_text", "異常徽章文字")}
             ${this._textField("rain_icon", "下雨圖示")}
             ${this._textField("dry_icon", "沒下雨圖示")}
+            ${this._textField("unavailable_icon", "異常圖示")}
           </div>
         </section>
 
@@ -602,15 +610,19 @@ class UninusRainCardEditor extends LitElement {
       background: color-mix(in srgb, var(--card-background-color) 94%, var(--primary-color) 6%);
     }
     h3 { margin: 0; font-size: 15px; font-weight: 700; }
-    ha-entity-picker, ha-textfield { width: 100%; }
-    .field-label, .select-field > span { font-size: 12px; color: var(--secondary-text-color); }
+    ha-entity-picker { width: 100%; }
+    .field-label, .select-field > span, .text-field > span {
+      font-size: 12px;
+      color: var(--secondary-text-color);
+    }
     .two-columns, .colors { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
-    .select-field { display: grid; gap: 7px; }
-    select {
+    .select-field, .text-field { min-width: 0; display: grid; gap: 7px; }
+    .text-field input, select {
       width: 100%;
       box-sizing: border-box;
       min-height: 44px;
       padding: 0 12px;
+      font: inherit;
       color: var(--primary-text-color);
       background: var(--card-background-color);
       border: 1px solid var(--divider-color);

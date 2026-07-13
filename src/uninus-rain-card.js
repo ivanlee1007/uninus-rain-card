@@ -3,6 +3,7 @@ import { styleMap } from "lit/directives/style-map.js";
 import {
   applyEditorChange,
   DEFAULT_CONFIG,
+  formatEntityTimestamp,
   getLayoutMode,
   normalizeConfig,
   resolveEditorValue,
@@ -10,18 +11,20 @@ import {
   resolveVisualState,
 } from "./core.js";
 
-const VERSION = "1.0.3";
+const VERSION = "1.0.4";
 
 class UninusRainCard extends LitElement {
   static properties = {
     hass: { attribute: false },
     _config: { state: true },
     _layout: { state: true },
+    _cardHeight: { state: true },
   };
 
   constructor() {
     super();
     this._layout = "regular";
+    this._cardHeight = 0;
   }
 
   static async getConfigElement() {
@@ -37,6 +40,8 @@ class UninusRainCard extends LitElement {
 
   setConfig(config) {
     this._config = normalizeConfig(config);
+    const { width, height } = this.getBoundingClientRect();
+    if (width || height) this._updateLayout(width, height);
   }
 
   getCardSize() {
@@ -66,11 +71,16 @@ class UninusRainCard extends LitElement {
     if (!this._resizeObserver) {
       this._resizeObserver = new ResizeObserver(([entry]) => {
         const { width, height } = entry.contentRect;
-        const next = getLayoutMode(width, height);
-        if (next !== this._layout) this._layout = next;
+        this._updateLayout(width, height);
       });
     }
     this._resizeObserver.observe(this);
+  }
+
+  _updateLayout(width, height) {
+    this._cardHeight = height;
+    const next = getLayoutMode(width, height, this._config?.force_portrait);
+    if (next !== this._layout) this._layout = next;
   }
 
   disconnectedCallback() {
@@ -98,9 +108,21 @@ class UninusRainCard extends LitElement {
     if (!this._config) return nothing;
     const entity = this.hass?.states?.[this._config.entity];
     const visual = resolveVisualState(entity?.state, this._config);
-    const secondary = resolveSecondaryText(entity?.attributes, this._config);
+    const secondary = resolveSecondaryText(
+      entity,
+      this._config,
+      (value) => formatEntityTimestamp(value, this.hass?.config?.time_zone),
+    );
     const raining = visual.kind === "rain";
     const animation = this._config.animation;
+    const shortPortrait = this._layout === "portrait" && this._cardHeight < 173;
+    const ultraShortPortrait = this._layout === "portrait" && this._cardHeight < 96;
+    const ariaLabel = [
+      this._config.name,
+      visual.stateText,
+      this._config.show_secondary ? secondary : null,
+      this._config.show_status ? visual.statusText : null,
+    ].filter(Boolean).join("，");
     const cardStyle = {
       "--state-color": visual.color,
       "--state-color-end": visual.colorEnd,
@@ -110,11 +132,11 @@ class UninusRainCard extends LitElement {
 
     return html`
       <ha-card
-        class="weather-card ${this._layout} ${visual.kind} ${animation ? "animated" : ""}"
+        class="weather-card ${this._layout} ${shortPortrait ? "short-portrait" : ""} ${ultraShortPortrait ? "ultra-short-portrait" : ""} ${visual.kind} ${animation ? "animated" : ""}"
         style=${styleMap(cardStyle)}
         role="button"
         tabindex="0"
-        aria-label="${this._config.name}：${visual.stateText}"
+        aria-label=${ariaLabel}
         @click=${this._openMoreInfo}
         @keydown=${this._handleKeydown}
       >
@@ -427,6 +449,111 @@ class UninusRainCard extends LitElement {
       text-overflow: ellipsis;
     }
 
+    ha-card.portrait.short-portrait .content {
+      min-height: 0;
+      grid-template-rows: 30px auto 18px;
+      gap: 3px;
+      padding: 4px 8px;
+    }
+
+    ha-card.portrait.short-portrait .icon-wrap {
+      width: 30px;
+      border-radius: 9px;
+    }
+
+    ha-card.portrait.short-portrait .icon-wrap ha-icon {
+      --mdc-icon-size: 18px;
+    }
+
+    ha-card.portrait.short-portrait .copy {
+      gap: 2px;
+    }
+
+    ha-card.portrait.short-portrait .heading-row {
+      flex-direction: row;
+      justify-content: center;
+      gap: 5px;
+    }
+
+    ha-card.portrait.short-portrait .name {
+      font-size: 9px;
+    }
+
+    ha-card.portrait.short-portrait .secondary {
+      font-size: 8px;
+    }
+
+    ha-card.portrait.short-portrait .state-text {
+      -webkit-line-clamp: 1;
+      font-size: 13px;
+      line-height: 1.05;
+    }
+
+    ha-card.portrait.short-portrait .status {
+      min-height: 18px;
+      gap: 4px;
+      padding: 2px 6px;
+      font-size: 9px;
+    }
+
+    ha-card.portrait.short-portrait .status-dot {
+      width: 5px;
+      height: 5px;
+      flex-basis: 5px;
+    }
+
+    ha-card.portrait.ultra-short-portrait .content {
+      grid-template-rows: 18px auto 10px;
+      gap: 1px;
+      padding: 2px 6px;
+    }
+
+    ha-card.portrait.ultra-short-portrait .icon-wrap {
+      width: 18px;
+      border-radius: 6px;
+    }
+
+    ha-card.portrait.ultra-short-portrait .icon-wrap ha-icon {
+      --mdc-icon-size: 12px;
+    }
+
+    ha-card.portrait.ultra-short-portrait .copy {
+      gap: 1px;
+    }
+
+    ha-card.portrait.ultra-short-portrait .secondary {
+      display: none;
+    }
+
+    ha-card.portrait.ultra-short-portrait .name {
+      font-size: 8px;
+    }
+
+    ha-card.portrait.ultra-short-portrait .state-text {
+      font-size: 11px;
+      line-height: 1;
+    }
+
+    ha-card.portrait.ultra-short-portrait .status {
+      width: 10px;
+      height: 10px;
+      min-width: 10px;
+      min-height: 10px;
+      padding: 0;
+      border: 0;
+      background: transparent;
+    }
+
+    ha-card.portrait.ultra-short-portrait .status-label {
+      display: none;
+    }
+
+    ha-card.portrait.ultra-short-portrait .status-dot {
+      width: 4px;
+      height: 4px;
+      flex-basis: 4px;
+    }
+
     ha-card.compact .content {
       grid-template-columns: 40px minmax(0, 1fr) auto;
       gap: 8px;
@@ -577,7 +704,9 @@ class UninusRainCardEditor extends LitElement {
   render() {
     if (!this.hass || !this._config) return nothing;
     const entity = this.hass.states?.[this._config.entity];
-    const attributes = Object.keys(entity?.attributes ?? {}).sort();
+    const attributes = Object.keys(entity?.attributes ?? {})
+      .filter((attribute) => attribute !== "last_changed" && attribute !== "last_updated")
+      .sort();
 
     return html`
       <div class="editor">
@@ -596,9 +725,15 @@ class UninusRainCardEditor extends LitElement {
             ${this._textField("secondary_text", "左側副標文字")}
           </div>
           <label class="select-field">
-            <span>副標 Attribute（有值時優先顯示）</span>
+            <span>副標資訊來源（Attribute／Entity 時間）</span>
             <select data-key="secondary_attribute" @change=${this._changed}>
               <option value="">不使用 Attribute</option>
+              <option value="last_changed" ?selected=${this._config.secondary_attribute === "last_changed"}>
+                上次變更時間（last_changed）
+              </option>
+              <option value="last_updated" ?selected=${this._config.secondary_attribute === "last_updated"}>
+                最後更新時間（last_updated）
+              </option>
               ${attributes.map((attribute) => html`
                 <option value=${attribute} ?selected=${this._config.secondary_attribute === attribute}>
                   ${attribute}
@@ -646,6 +781,7 @@ class UninusRainCardEditor extends LitElement {
           <h3>顯示與動畫</h3>
           <div class="toggles">
             ${this._switch("animation", "啟用雨滴及狀態動畫")}
+            ${this._switch("force_portrait", "強制使用直式版面")}
             ${this._switch("show_secondary", "顯示左側副標")}
             ${this._switch("show_status", "顯示右側狀態徽章")}
           </div>

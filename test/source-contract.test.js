@@ -51,3 +51,39 @@ test("portrait cards stack icon, copy, and status instead of using the tiny row"
   assert.match(source, /ha-card\.portrait \.status\s*\{[\s\S]*?min-width:\s*0[\s\S]*?max-width:\s*100%/);
   assert.match(source, /ha-card\.portrait \.status-label\s*\{[\s\S]*?text-overflow:\s*ellipsis/);
 });
+
+test("force portrait is wired from the editor through live card layout updates", async () => {
+  const source = await readFile(sourcePath, "utf8");
+
+  assert.match(source, /_switch\("force_portrait",\s*"強制使用直式版面"\)/);
+  assert.match(source, /getLayoutMode\(width,\s*height,\s*this\._config\?\.force_portrait\)/);
+  assert.match(source, /setConfig\(config\)[\s\S]*?getBoundingClientRect\(\)[\s\S]*?_updateLayout/);
+  assert.match(source, /short-portrait/);
+});
+
+test("short portrait uses a dense vertical hierarchy for near-square cards", async () => {
+  const source = await readFile(sourcePath, "utf8");
+
+  assert.match(source, /ha-card\.portrait\.short-portrait \.content\s*\{[\s\S]*?min-height:\s*0[\s\S]*?gap:\s*3px/);
+  assert.match(source, /ha-card\.portrait\.short-portrait \.icon-wrap\s*\{[\s\S]*?width:\s*30px/);
+  assert.match(source, /ha-card\.portrait\.short-portrait \.heading-row\s*\{[\s\S]*?flex-direction:\s*row/);
+  assert.match(source, /ha-card\.portrait\.short-portrait \.status\s*\{[\s\S]*?min-height:\s*18px/);
+});
+
+test("editor offers entity timestamps as secondary information sources", async () => {
+  const source = await readFile(sourcePath, "utf8");
+
+  assert.match(source, /resolveSecondaryText\(\s*entity,\s*this\._config,/);
+  assert.match(source, /<option value="last_changed"[\s\S]*?上次變更時間/);
+  assert.match(source, /<option value="last_updated"[\s\S]*?最後更新時間/);
+});
+
+test("forced portrait handles ultra-short cards and exposes secondary metadata accessibly", async () => {
+  const source = await readFile(sourcePath, "utf8");
+
+  assert.match(source, /formatEntityTimestamp\(value,\s*this\.hass\?\.config\?\.time_zone\)/);
+  assert.match(source, /ultra-short-portrait/);
+  assert.match(source, /ha-card\.portrait\.ultra-short-portrait \.content\s*\{[\s\S]*?grid-template-rows:\s*18px auto 10px/);
+  assert.match(source, /ha-card\.portrait\.ultra-short-portrait \.secondary[\s\S]*?display:\s*none/);
+  assert.match(source, /const ariaLabel[\s\S]*?secondary[\s\S]*?visual\.statusText/);
+});

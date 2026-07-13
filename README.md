@@ -6,11 +6,12 @@
 
 - 🌧️ 下雨時顯示雨滴、警示光暈與脈衝動畫
 - 🌤️ 沒下雨時使用安靜的藍綠漸層與漂浮圖示
-- 📐 透過 `ResizeObserver` 依卡片實際寬高切換 tiny、compact、regular、expanded 版面
+- 📐 透過 `ResizeObserver` 依卡片實際寬高切換 tiny、compact、regular、expanded、portrait 版面
+- ↕️ 可手動強制使用 portrait，近正方形與短卡會自動採用緊湊直式層級
 - 🔤 使用 `clamp()` 與 container query 單位自動縮放圖示及字型
 - 🎛️ 完整 Lovelace 視覺化設定 UI
 - 🧩 支援 `sensor` 與 `binary_sensor`
-- 🏷️ 副標可顯示自訂文字或指定 entity attribute
+- 🏷️ 副標可顯示自訂文字、指定 entity attribute、上次變更或最後更新時間
 - 🎨 可設定下雨、正常、異常狀態的起始色、結束色與強調色
 - ♿ 鍵盤操作、螢幕閱讀器標籤及 `prefers-reduced-motion`
 - 📦 HACS Lovelace repository 相容
@@ -57,7 +58,7 @@ name: 降雨監測
 - `下雨中`：警示狀態
 - `沒下雨`：正常狀態
 - `unknown`、`unavailable`：無資料狀態
-- 其他值：異常狀態，卡片會直接顯示原始狀態文字
+- 其他值：異常狀態，顯示可設定的「異常主要文字」
 
 ## 視覺化設定 UI
 
@@ -70,7 +71,9 @@ name: 降雨監測
 | 降雨 Entity | 要監測的 `sensor` 或 `binary_sensor` |
 | 卡片名稱 | 左側上方名稱 |
 | 左側副標文字 | 顯示於名稱右側的補充文字 |
-| 副標 Attribute | 若 attribute 有值，優先取代自訂副標文字 |
+| 副標資訊來源 | 可選 Attribute、`last_changed` 上次變更或 `last_updated` 最後更新 |
+
+時間來源使用 Home Assistant 的 `config.time_zone` 顯示為 `MM/DD HH:mm`（00–23 小時制）；時間缺失或格式無效時會回退到自訂副標文字。
 
 ### 狀態與文字
 
@@ -90,6 +93,7 @@ name: 降雨監測
 UI 可分別調整下雨、正常與異常狀態的漸層色，也能關閉：
 
 - 雨滴及狀態動畫
+- 強制使用直式版面
 - 左側副標
 - 右側狀態徽章
 
@@ -100,7 +104,8 @@ type: custom:uninus-rain-card
 entity: sensor.rain_state
 name: 屋頂降雨監測
 secondary_text: 北棟屋頂
-secondary_attribute: station_name
+# 一般 Attribute，或改用 last_changed / last_updated
+secondary_attribute: last_updated
 
 rain_state: 下雨中
 dry_state: 沒下雨
@@ -123,6 +128,7 @@ unknown_color_end: "#475569"
 text_color: "#ffffff"
 
 animation: true
+force_portrait: false
 show_secondary: true
 show_status: true
 
@@ -141,8 +147,11 @@ grid_options:
 | compact | 寬度偏窄或高度低於約 72px | 縮小間距、圖示與徽章 |
 | regular | 一般卡片尺寸 | 完整橫向資訊版面 |
 | expanded | 高度至少約 112px 且有足夠寬度 | 放大圖示、主要文字及內距 |
+| portrait | 窄且高度明顯大於寬度，或手動強制 | 圖示、文字與徽章改為垂直層級 |
 
 因此卡片可用於 Sections、Masonry 與不同欄數的 Grid 版面。
+
+啟用 `force_portrait: true` 後，卡片會忽略自動比例判斷。高度低於 173px 時使用緊湊直式排列；低於 96px 時會隱藏可選副標、將徽章縮為狀態點，優先保留名稱與主狀態並避免裁切。完整副標與徽章文字仍包含在無障礙標籤中。
 
 ## 開發
 

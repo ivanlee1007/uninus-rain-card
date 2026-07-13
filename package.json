@@ -1,6 +1,6 @@
 {
   "name": "uninus-rain-card",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "A polished, responsive rain sensor card for Home Assistant Lovelace.",
   "type": "module",
   "main": "uninus-rain-card.js",

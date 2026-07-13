@@ -4,6 +4,7 @@ import assert from "node:assert/strict";
 import {
   applyEditorChange,
   DEFAULT_CONFIG,
+  formatEntityTimestamp,
   getLayoutMode,
   normalizeConfig,
   resolveEditorValue,
@@ -26,6 +27,7 @@ test("normalizeConfig supplies polished defaults and preserves valid custom sett
     rain_color: "#dc2626",
     dry_color: "rgb(8, 145, 178)",
     animation: false,
+    force_portrait: true,
   });
 
   assert.equal(config.entity, "sensor.garden_rain");
@@ -37,7 +39,9 @@ test("normalizeConfig supplies polished defaults and preserves valid custom sett
   assert.equal(config.rain_color, "#dc2626");
   assert.equal(config.dry_color, "rgb(8, 145, 178)");
   assert.equal(config.animation, false);
+  assert.equal(config.force_portrait, true);
   assert.equal(config.rain_status_text, DEFAULT_CONFIG.rain_status_text);
+  assert.equal(normalizeConfig({ entity: "sensor.rain", force_portrait: "true" }).force_portrait, false);
 });
 
 test("normalizeConfig rejects unsafe CSS color values", () => {
@@ -76,6 +80,53 @@ test("resolveSecondaryText prefers a configured entity attribute and preserves z
   assert.equal(resolveSecondaryText({}, config), "屋頂感測器");
 });
 
+test("resolveSecondaryText exposes entity last changed and last updated timestamps", () => {
+  const entity = {
+    attributes: { station: "屋頂" },
+    last_changed: "2026-07-14T01:20:00+08:00",
+    last_updated: "2026-07-14T01:25:00+08:00",
+  };
+  const formatter = (value) => `FMT:${value}`;
+
+  const changedConfig = normalizeConfig({ entity: "sensor.rain", secondary_attribute: "last_changed" });
+  assert.equal(
+    resolveSecondaryText(entity, changedConfig, formatter),
+    "上次變更 FMT:2026-07-14T01:20:00+08:00",
+  );
+
+  const updatedConfig = normalizeConfig({ entity: "sensor.rain", secondary_attribute: "last_updated" });
+  assert.equal(
+    resolveSecondaryText(entity, updatedConfig, formatter),
+    "最後更新 FMT:2026-07-14T01:25:00+08:00",
+  );
+});
+
+test("entity timestamps use a 00-23 clock and invalid values fall back safely", () => {
+  const midnight = formatEntityTimestamp("2026-07-14T00:05:00");
+  assert.match(midnight, /00:05$/);
+  assert.doesNotMatch(midnight, /24:05$/);
+
+  const config = normalizeConfig({
+    entity: "sensor.rain",
+    secondary_text: "時間無法取得",
+    secondary_attribute: "last_updated",
+  });
+  assert.equal(
+    resolveSecondaryText({ attributes: { last_updated: "attribute collision" }, last_updated: "not-a-date" }, config),
+    "時間無法取得",
+  );
+
+  const changedConfig = normalizeConfig({
+    entity: "sensor.rain",
+    secondary_text: "沒有變更時間",
+    secondary_attribute: "last_changed",
+  });
+  assert.equal(
+    resolveSecondaryText({ attributes: { last_changed: "attribute collision" } }, changedConfig),
+    "沒有變更時間",
+  );
+});
+
 test("applyEditorChange preserves booleans and removes cleared optional values", () => {
   const initial = { entity: "sensor.rain", show_status: true, secondary_attribute: "rate" };
   assert.deepEqual(applyEditorChange(initial, "show_status", false), {
@@ -107,6 +158,8 @@ test("resolveEditorValue distinguishes switches from color inputs that expose ch
 });
 
 test("getLayoutMode adapts to actual card width and height", () => {
+  assert.equal(getLayoutMode(150, 117, true), "portrait");
+  assert.equal(getLayoutMode(320, 200, true), "portrait");
   assert.equal(getLayoutMode(210, 64), "tiny");
   assert.equal(getLayoutMode(150, 119), "tiny");
   assert.equal(getLayoutMode(150, 172), "tiny");

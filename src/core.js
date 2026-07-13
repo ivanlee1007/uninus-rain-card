@@ -29,6 +29,7 @@ export const DEFAULT_CONFIG = Object.freeze({
   animation: true,
   show_status: true,
   show_secondary: true,
+  force_portrait: false,
 });
 
 function safeColor(value, fallback) {
@@ -87,7 +88,7 @@ export function normalizeConfig(input) {
     config[key] = safeColor(input[key], DEFAULT_CONFIG[key]);
   }
 
-  for (const key of ["animation", "show_status", "show_secondary"]) {
+  for (const key of ["animation", "show_status", "show_secondary", "force_portrait"]) {
     config[key] = typeof input[key] === "boolean" ? input[key] : DEFAULT_CONFIG[key];
   }
 
@@ -142,8 +143,41 @@ export function resolveVisualState(state, config) {
   };
 }
 
-export function resolveSecondaryText(attributes, config) {
+export function formatEntityTimestamp(value, timeZone = undefined) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return null;
+  try {
+    return new Intl.DateTimeFormat("zh-TW", {
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      hourCycle: "h23",
+      ...(timeZone ? { timeZone } : {}),
+    }).format(date);
+  } catch {
+    return null;
+  }
+}
+
+export function resolveSecondaryText(entityOrAttributes, config, formatTimestamp = formatEntityTimestamp) {
   const attribute = config.secondary_attribute;
+  const entity = entityOrAttributes?.attributes ? entityOrAttributes : undefined;
+  if (attribute === "last_changed") {
+    if (entity?.last_changed) {
+      const formatted = formatTimestamp(entity.last_changed);
+      if (formatted) return `上次變更 ${formatted}`;
+    }
+    return config.secondary_text;
+  }
+  if (attribute === "last_updated") {
+    if (entity?.last_updated) {
+      const formatted = formatTimestamp(entity.last_updated);
+      if (formatted) return `最後更新 ${formatted}`;
+    }
+    return config.secondary_text;
+  }
+  const attributes = entity?.attributes ?? entityOrAttributes;
   if (attribute && attributes && attributes[attribute] !== undefined && attributes[attribute] !== null) {
     return String(attributes[attribute]);
   }
@@ -162,7 +196,8 @@ export function applyEditorChange(config, key, value) {
   return next;
 }
 
-export function getLayoutMode(width, height) {
+export function getLayoutMode(width, height, forcePortrait = false) {
+  if (forcePortrait) return "portrait";
   if (width < 360 && height >= 120 && height >= width * 1.15) return "portrait";
   if (width < 240) return "tiny";
   if (height >= 112 && width >= 360) return "expanded";

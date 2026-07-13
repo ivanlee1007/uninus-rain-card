@@ -1,0 +1,34 @@
+{
+  "name": "uninus-rain-card",
+  "version": "1.0.0",
+  "description": "A polished, responsive rain sensor card for Home Assistant Lovelace.",
+  "type": "module",
+  "main": "uninus-rain-card.js",
+  "files": [
+    "uninus-rain-card.js",
+    "README.md",
+    "LICENSE",
+    "hacs.json"
+  ],
+  "scripts": {
+    "test": "node --test",
+    "build": "rollup -c",
+    "check": "npm test && npm run build && node --check uninus-rain-card.js"
+  },
+  "keywords": [
+    "home-assistant",
+    "lovelace",
+    "custom-card",
+    "rain-sensor",
+    "hacs"
+  ],
+  "author": "ivanlee1007",
+  "license": "MIT",
+  "dependencies": {
+    "lit": "^3.3.3"
+  },
+  "devDependencies": {
+    "@rollup/plugin-node-resolve": "^16.0.3",
+    "rollup": "^4.62.2"
+  }
+}

@@ -108,6 +108,13 @@ test("resolveEditorValue distinguishes switches from color inputs that expose ch
 
 test("getLayoutMode adapts to actual card width and height", () => {
   assert.equal(getLayoutMode(210, 64), "tiny");
+  assert.equal(getLayoutMode(150, 119), "tiny");
+  assert.equal(getLayoutMode(150, 172), "tiny");
+  assert.equal(getLayoutMode(150, 173), "portrait");
+  assert.equal(getLayoutMode(150, 250), "portrait");
+  assert.equal(getLayoutMode(320, 420), "portrait");
+  assert.equal(getLayoutMode(359, 413), "portrait");
+  assert.equal(getLayoutMode(360, 500), "expanded");
   assert.equal(getLayoutMode(320, 64), "compact");
   assert.equal(getLayoutMode(420, 80), "regular");
   assert.equal(getLayoutMode(520, 150), "expanded");

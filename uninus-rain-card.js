@@ -202,13 +202,14 @@ function applyEditorChange(config, key, value) {
 }
 
 function getLayoutMode(width, height) {
+  if (width < 360 && height >= 120 && height >= width * 1.15) return "portrait";
   if (width < 240) return "tiny";
   if (height >= 112 && width >= 360) return "expanded";
   if (width < 360 || height < 72) return "compact";
   return "regular";
 }
 
-const VERSION = "1.0.2";
+const VERSION = "1.0.3";
 
 class UninusRainCard extends i$2 {
   static properties = {
@@ -557,6 +558,72 @@ class UninusRainCard extends i$2 {
 
     ha-card.expanded .state-text {
       font-size: clamp(21px, 5.2cqi, 30px);
+    }
+
+    ha-card.portrait .content {
+      min-height: 120px;
+      grid-template-columns: 1fr;
+      grid-template-rows: auto auto auto;
+      justify-items: center;
+      align-content: center;
+      gap: clamp(8px, 5cqi, 16px);
+      padding: clamp(12px, 8cqi, 22px) clamp(10px, 8cqi, 20px);
+    }
+
+    ha-card.portrait .icon-wrap {
+      width: clamp(44px, 28cqi, 64px);
+      border-radius: clamp(12px, 8cqi, 18px);
+    }
+
+    ha-card.portrait .icon-wrap ha-icon {
+      --mdc-icon-size: clamp(27px, 18cqi, 38px);
+    }
+
+    ha-card.portrait .copy {
+      width: 100%;
+      justify-items: center;
+      gap: 6px;
+      text-align: center;
+    }
+
+    ha-card.portrait .heading-row {
+      width: 100%;
+      flex-direction: column;
+      align-items: center;
+      gap: 3px;
+    }
+
+    ha-card.portrait .name {
+      font-size: clamp(10px, 7cqi, 13px);
+    }
+
+    ha-card.portrait .secondary {
+      max-width: 100%;
+      font-size: clamp(9px, 6cqi, 11px);
+    }
+
+    ha-card.portrait .state-text {
+      display: -webkit-box;
+      overflow: hidden;
+      overflow-wrap: anywhere;
+      -webkit-box-orient: vertical;
+      -webkit-line-clamp: 2;
+      white-space: normal;
+      text-align: center;
+      font-size: clamp(15px, 10cqi, 22px);
+    }
+
+    ha-card.portrait .status {
+      justify-self: center;
+      min-width: 0;
+      max-width: 100%;
+      box-sizing: border-box;
+    }
+
+    ha-card.portrait .status-label {
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
 
     ha-card.compact .content {

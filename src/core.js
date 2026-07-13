@@ -163,6 +163,7 @@ export function applyEditorChange(config, key, value) {
 }
 
 export function getLayoutMode(width, height) {
+  if (width < 360 && height >= 120 && height >= width * 1.15) return "portrait";
   if (width < 240) return "tiny";
   if (height >= 112 && width >= 360) return "expanded";
   if (width < 360 || height < 72) return "compact";

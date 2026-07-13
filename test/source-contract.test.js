@@ -41,3 +41,13 @@ test("editor renders every state text setting without optional HA textfield depe
     assert.match(source, new RegExp(`_textField\\("${key}"`));
   }
 });
+
+test("portrait cards stack icon, copy, and status instead of using the tiny row", async () => {
+  const source = await readFile(sourcePath, "utf8");
+
+  assert.match(source, /ha-card\.portrait \.content\s*\{[\s\S]*?grid-template-columns:\s*1fr/);
+  assert.match(source, /ha-card\.portrait \.heading-row\s*\{[\s\S]*?flex-direction:\s*column/);
+  assert.match(source, /ha-card\.portrait \.state-text\s*\{[\s\S]*?white-space:\s*normal/);
+  assert.match(source, /ha-card\.portrait \.status\s*\{[\s\S]*?min-width:\s*0[\s\S]*?max-width:\s*100%/);
+  assert.match(source, /ha-card\.portrait \.status-label\s*\{[\s\S]*?text-overflow:\s*ellipsis/);
+});
